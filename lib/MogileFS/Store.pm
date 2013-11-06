@@ -1762,6 +1762,7 @@ sub grab_queue_chunk {
     # we'll just always ensure there's no transaction running at the end here.
     # A (near) release should figure the error detection correctly.
     if ($dbh->{AutoCommit} == 0) { eval { $dbh->rollback }; }
+    sleep 2;
     $self->unlock_queue($queue);
 
     return defined $work ? values %$work : ();
