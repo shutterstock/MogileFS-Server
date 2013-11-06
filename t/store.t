@@ -235,4 +235,18 @@ if (ref($sto) eq "MogileFS::Store::Postgres") {
     ok($rows->[0] eq 'Case_Sensitive_Clod', "list_keys matches insensitively (again)");
 }
 
+# test grab files to replicate on locked queue
+{
+	# poor man's monkeypatching
+	no strict 'refs';
+	no warnings 'redefine';
+	my $class = ref($sto);
+	local *{"$class\::lock_queue"} = sub { return 0 };
+
+	my @files = $sto->grab_queue_chunk('file_to_replicate', 1, 'fromdevid, flags');
+	my $file  = $sto->grab_queue_chunk('file_to_replicate', 1, 'fromdevid, flags');
+	ok(!scalar @files, 'graceful failure of grab_queue_chunk in list context');
+	ok(!$file, 'graceful failure of grab_queue_chunk in sscalar context');
+}
+
 done_testing();
