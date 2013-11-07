@@ -1755,6 +1755,9 @@ sub grab_queue_chunk {
         eval { $dbh->rollback };
         $work = undef;
     } else {
+        if ($dbh->err) {
+            $self->unlock_queue($queue);
+        }
         $self->condthrow;
     }
     # FIXME: Super extra paranoia to prevent deadlocking.
