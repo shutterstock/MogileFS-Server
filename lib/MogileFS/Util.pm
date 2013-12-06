@@ -170,7 +170,7 @@ sub daemonize {
     ## Clear file creation mask
     umask 0;
 
-    print STDERR "Daemon running as pid $$.\n" if $MogileFS::DEBUG;
+    print STDERR "Daemon running as pid $$.\n" if $Mgd::DEBUG;
 
     ## Close open file descriptors
     close(STDIN);
@@ -178,7 +178,7 @@ sub daemonize {
     close(STDERR);
 
     ## Reopen STDERR, STDOUT, STDIN to /dev/null
-    if ( $MogileFS::DEBUG ) {
+    if ( $Mgd::DEBUG ) {
         open(STDIN,  "+>/tmp/mogilefsd.log");
     } else {
         open(STDIN,  "+>/dev/null");
