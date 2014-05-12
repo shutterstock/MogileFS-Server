@@ -777,6 +777,15 @@ sub cmd_rename {
     $fid->rename($tkey) or
         $self->err_line("key_exists");
 
+    my $memc         = MogileFS::Config->memcache_client;
+    my $memcache_ttl = MogileFS::Config->server_setting_cached("memcache_ttl") || 3600;
+    my $devid_memkey = "mogdevids:" . $fid->id;
+    my @fid_devids;
+    Mgd::get_store()->slaves_ok(sub {
+        @fid_devids = $fid->devids;
+    });  
+    $memc->set($devid_memkey, \@fid_devids, $memcache_ttl ) if $memc;
+
     return $self->ok_line;
 }
 
