@@ -427,6 +427,17 @@ sub cmd_create_close {
     my $trow = $sto->delete_and_return_tempfile_row($fidid) or
         return $self->err_line("no_temp_file");
 
+    # see if we have a fid for this key already
+    my $old_fid = MogileFS::FID->new_from_dmid_and_key($dmid, $key);
+    if ($old_fid) {
+        # Fail if a file already exists for this fid.  Should never
+        # happen, as it should not be possible to close a file twice.
+        return $self->err_line("fid_exists")
+            unless $old_fid->{fidid} != $fidid;
+
+        $old_fid->delete;
+    }
+
     for my $idx (0 .. $#devids) {
         my ($devid, $path) = ($devids[$idx], $paths[$idx]);
         my $dfid = MogileFS::DevFID->new($devid, $fid);
@@ -486,17 +497,6 @@ sub cmd_create_close {
                 return $self->err_line("checksum_mismatch",
                             "Expected: $checksum; actual: $actual; path: $path");
             }
-        }
-
-        # see if we have a fid for this key already
-        my $old_fid = MogileFS::FID->new_from_dmid_and_key($dmid, $key);
-        if ($old_fid) {
-            # Fail if a file already exists for this fid.  Should never
-            # happen, as it should not be possible to close a file twice.
-            return $self->err_line("fid_exists")
-                unless $old_fid->{fidid} != $fidid;
-
-            $old_fid->delete;
         }
 
         # TODO: check for EIO?
