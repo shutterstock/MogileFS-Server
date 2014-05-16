@@ -409,17 +409,19 @@ sub cmd_create_close {
     for my $devid (@devids) {
         my $dfid = MogileFS::DevFID->new($devid, $fid);
 
-        # is the provided path what we'd expect for this fid/devid?
-        return $self->err_line("bogus_args")
-            unless $path eq $dfid->url;
-
-        my $sto = Mgd::get_store();
-
         # Protect against leaving orphaned uploads.
         my $failed = sub {
             $dfid->add_to_db;
             $fid->delete;
         };
+
+        # is the provided path what we'd expect for this fid/devid?
+        unless ($path eq $defid->url) {
+            $failed->();
+            return $self->err_line("bogus_args");
+        }
+
+        my $sto = Mgd::get_store();
 
         unless ($trow->{devids} =~ m/\b$devid\b/) {
             $failed->();
