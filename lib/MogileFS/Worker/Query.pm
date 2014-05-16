@@ -397,6 +397,8 @@ sub cmd_create_close {
 
     my $fid  = MogileFS::FID->new($fidid);
 
+    my $sto = Mgd::get_store();
+
     # find the temp file we're closing and making real.  If another worker
     # already has it, bail out---the client closed it twice.
     # this is racy, but the only expected use case is a client retrying.
@@ -420,8 +422,6 @@ sub cmd_create_close {
             $failed->();
             return $self->err_line("bogus_args");
         }
-
-        my $sto = Mgd::get_store();
 
         unless ($trow->{devids} =~ m/\b$devid\b/) {
             $failed->();
