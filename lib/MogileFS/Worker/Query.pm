@@ -386,8 +386,29 @@ sub cmd_create_close {
     my $dmid  = $args->{dmid};
     my $key   = $args->{key};
     my $fidid = $args->{fid}    or return $self->err_line("no_fid");
-    my $devs  = $args->{devid}  or return $self->err_line("no_devid");
-    my $path  = $args->{path}   or return $self->err_line("no_path");
+    
+    my @devids;
+    if (my @dev_args = grep /^devid_\d+$/, keys %$args) {
+      my @dev_indices = sort { $a <=> $b } map /^devid_(\d+)$/, @dev_args;
+      @devids = map $args->{"devid_$_"}, @dev_indices;
+    } elsif ($args->{devid}) {
+      @devids = ($args->{devid});
+    } else {
+      return $self->err_line("no_devid");
+    }
+
+    my @paths;
+    if (my @path_args = grep /^path_\d+$/, keys %$args) {
+      my @path_indices = sort { $a <=> $b } map /^path_(\d+)$/, @path_args;
+      @paths = map $args->{"path_$_"}, @path_indices;
+    } elsif ($args->{path}) {
+      @paths = ($args->{path});
+    } else {
+      return $self->err_line("no_path");
+    }
+
+    return $self->err_line("bogus_args") unless @devids == @paths;
+
     my $checksum = $args->{checksum};
 
     if ($checksum) {
@@ -406,9 +427,8 @@ sub cmd_create_close {
     my $trow = $sto->delete_and_return_tempfile_row($fidid) or
         return $self->err_line("no_temp_file");
 
-    my @devids = split /,/, $devs;
-
-    for my $devid (@devids) {
+    for my $idx (0 .. $#devids) {
+        my ($devid, $path) = ($devids[$idx], $paths[$idx]);
         my $dfid = MogileFS::DevFID->new($devid, $fid);
 
         # Protect against leaving orphaned uploads.
@@ -418,7 +438,7 @@ sub cmd_create_close {
         };
 
         # is the provided path what we'd expect for this fid/devid?
-        unless ($path eq $defid->url) {
+        unless ($path eq $dfid->url) {
             $failed->();
             return $self->err_line("bogus_args");
         }
