@@ -438,6 +438,8 @@ sub cmd_create_close {
         $old_fid->delete;
     }
 
+    my $devcount = 0;
+
     for my $idx (0 .. $#devids) {
         my ($devid, $path) = ($devids[$idx], $paths[$idx]);
         my $dfid = MogileFS::DevFID->new($devid, $fid);
@@ -503,6 +505,7 @@ sub cmd_create_close {
 
         # insert file_on row
         $dfid->add_to_db;
+        $devcount ++;
 
         $checksum->maybe_save($dmid, $trow->{classid}) if $checksum;
 
@@ -512,7 +515,7 @@ sub cmd_create_close {
                                 key     => $key,
                                 length  => $size,
                                 classid => $trow->{classid},
-                                devcount => 1,
+                                devcount => $devcount,
                                 );
     }
 
