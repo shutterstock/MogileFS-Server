@@ -397,6 +397,13 @@ sub cmd_create_close {
 
     my $fid  = MogileFS::FID->new($fidid);
 
+    # find the temp file we're closing and making real.  If another worker
+    # already has it, bail out---the client closed it twice.
+    # this is racy, but the only expected use case is a client retrying.
+    # should still be fixed better once more scalable locking is available.
+    my $trow = $sto->delete_and_return_tempfile_row($fidid) or
+        return $self->err_line("no_temp_file");
+
     my @devids = split /,/, $devs;
 
     for my $devid (@devids) {
@@ -407,13 +414,6 @@ sub cmd_create_close {
             unless $path eq $dfid->url;
 
         my $sto = Mgd::get_store();
-
-        # find the temp file we're closing and making real.  If another worker
-        # already has it, bail out---the client closed it twice.
-        # this is racy, but the only expected use case is a client retrying.
-        # should still be fixed better once more scalable locking is available.
-        my $trow = $sto->delete_and_return_tempfile_row($fidid) or
-            return $self->err_line("no_temp_file");
 
         # Protect against leaving orphaned uploads.
         my $failed = sub {
