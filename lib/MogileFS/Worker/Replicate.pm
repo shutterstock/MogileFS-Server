@@ -521,7 +521,7 @@ sub replicate {
                     dmid => $fid->dmid,
                     key => $fid->{dkey},
                     fid => $fidid,
-                    devid => \@on_up_devid,
+                    devid => $fid->devids,
                     path => "",
                     checksum => "",
                 );
