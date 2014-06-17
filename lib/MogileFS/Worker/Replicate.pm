@@ -516,8 +516,22 @@ sub replicate {
     }
 
     if ($rr->is_happy) {
-        return $retunlock->(1) if $got_copy_request;
-        return $retunlock->("lost_race");  # some other process got to it first.  policy was happy immediately.
+        if ($got_copy_request) {
+            my %args = (
+                    dmid => $fid->dmid,
+                    key => $fid->{dkey},
+                    fid => $fidid,
+                    devid => \@on_up_devid,
+                    path => "",
+                    checksum => "",
+                );
+            debug("re-cache $fidid called, args=".join(',',keys(%args)));
+            my $rv = MogileFS::run_global_hook('file_stored', \%args);
+            # if (defined $rv && ! $rv) { # undef = no hooks, 1 = success, 0 = failure }
+            return $retunlock->(1);
+        } else {
+            return $retunlock->("lost_race");  # some other process got to it first.  policy was happy immediately.
+        }
     }
 
     return $retunlock->(0, "policy_no_suggestions",
